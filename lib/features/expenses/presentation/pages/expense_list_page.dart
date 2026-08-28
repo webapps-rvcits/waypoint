@@ -223,7 +223,39 @@ class ExpenseListPage extends ConsumerWidget {
                                 const SizedBox(height: 12),
                             itemBuilder: (context, index) {
                               final expense = filteredExpenses[index];
-                              return ExpenseCard(expense: expense);
+                              return ExpenseCard(
+                                expense: expense,
+                                onDelete: () async {
+                                  final confirmed = await showDialog<bool>(
+                                    context: context,
+                                    builder: (ctx) => AlertDialog(
+                                      title: const Text('Delete Expense'),
+                                      content: Text(
+                                        'Are you sure you want to delete "${expense.title}"?',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(ctx, false),
+                                          child: const Text('Cancel'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(ctx, true),
+                                          style: TextButton.styleFrom(
+                                            foregroundColor: Colors.red,
+                                          ),
+                                          child: const Text('Delete'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+
+                                  if (confirmed == true) {
+                                    await ref
+                                        .read(expenseListNotifierProvider.notifier)
+                                        .deleteExpense(expense.id);
+                                  }
+                                },
+                              );
                             },
                           ),
                   ),

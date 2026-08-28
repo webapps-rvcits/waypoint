@@ -10,17 +10,19 @@ import '../features/expenses/data/repositories/expense_repository_impl.dart';
 import '../features/expenses/domain/repositories/expense_repository.dart';
 import '../features/expenses/domain/usecases/get_expenses_usecase.dart';
 
+import '../features/expenses/data/datasources/hive_expense_remote_data_source.dart';
+
 final locator = GetIt.instance;
 
 void setupLocator() {
   // Storage
-  locator.registerLazySingleton<TokenStorage>(() => SharedPrefTokenStorage());
+  locator.registerLazySingleton<TokenStorage>(() => HiveTokenStorage());
 
   // Data sources
   locator.registerLazySingleton<AuthRemoteDataSource>(
       () => MockAuthRemoteDataSource());
   locator.registerLazySingleton<ExpenseRemoteDataSource>(
-      () => MockExpenseRemoteDataSource());
+      () => HiveExpenseRemoteDataSource());
 
   // Repositories
   locator.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(

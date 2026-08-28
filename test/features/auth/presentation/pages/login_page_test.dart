@@ -1,7 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:travelexpense/app/locator.dart';
 import 'package:travelexpense/features/auth/presentation/pages/login_page.dart';
 
@@ -10,15 +11,25 @@ import 'package:travelexpense/features/auth/presentation/pages/login_page.dart';
 /// Objective: Ensure that essential text elements (Welcome header, instructions)
 /// are correctly rendered on screen when the app boots up in unauthenticated state.
 void main() {
-  setUp(() {
-    SharedPreferences.setMockInitialValues({});
+  late Directory tempDir;
+
+  setUp(() async {
+    tempDir = await Directory.systemTemp.createTemp('hive_login_test_');
+    Hive.init(tempDir.path);
     setupLocator();
+  });
+
+  tearDown(() async {
+    await Hive.close();
+    locator.reset();
+    if (await tempDir.exists()) {
+      await tempDir.delete(recursive: true);
+    }
   });
 
   testWidgets(
     'LoginPage renders welcome text',
     (WidgetTester tester) async {
-      // Build the LoginPage inside a MaterialApp & ProviderScope harness
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(
@@ -27,7 +38,6 @@ void main() {
         ),
       );
 
-      // Verify that primary branding and instruction titles are visible
       expect(find.text('Welcome back'), findsOneWidget);
       expect(find.text('Sign in to log your trip spend'), findsOneWidget);
     },

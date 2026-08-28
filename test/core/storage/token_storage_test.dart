@@ -1,16 +1,26 @@
+import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:travelexpense/core/storage/token_storage.dart';
 
 void main() {
-  late SharedPrefTokenStorage tokenStorage;
+  late HiveTokenStorage tokenStorage;
+  late Directory tempDir;
 
-  setUp(() {
-    SharedPreferences.setMockInitialValues({});
-    tokenStorage = SharedPrefTokenStorage();
+  setUp(() async {
+    tempDir = await Directory.systemTemp.createTemp('hive_test_');
+    Hive.init(tempDir.path);
+    tokenStorage = HiveTokenStorage();
   });
 
-  group('SharedPrefTokenStorage', () {
+  tearDown(() async {
+    await Hive.close();
+    if (await tempDir.exists()) {
+      await tempDir.delete(recursive: true);
+    }
+  });
+
+  group('HiveTokenStorage', () {
     test('getToken returns null when no token is saved', () async {
       final token = await tokenStorage.getToken();
       expect(token, isNull);

@@ -14,8 +14,13 @@ import '../../domain/entities/expense.dart';
 /// - Objective of Test: Ensure category icon matches category enum, date is formatted as 'MMM dd', amount uses JetBrains Mono font with '$' symbol, and onTap navigates to ExpenseDetailPage.
 class ExpenseCard extends StatelessWidget {
   final Expense expense;
+  final VoidCallback? onDelete;
 
-  const ExpenseCard({super.key, required this.expense});
+  const ExpenseCard({
+    super.key,
+    required this.expense,
+    this.onDelete,
+  });
 
   IconData _getCategoryIcon(String category) {
     switch (category) {
@@ -70,13 +75,28 @@ class ExpenseCard extends StatelessWidget {
             ),
           ),
         ),
-        trailing: Text(
-          '\$${expense.amount.toStringAsFixed(2)}',
-          style: GoogleFonts.jetBrainsMono(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.inkDark,
-          ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '\$${expense.amount.toStringAsFixed(2)}',
+              style: GoogleFonts.jetBrainsMono(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.inkDark,
+              ),
+            ),
+            if (onDelete != null) ...[
+              const SizedBox(width: 4),
+              IconButton(
+                key: Key('delete_expense_${expense.id}'),
+                icon: const Icon(Icons.delete_outline, size: 20),
+                color: Colors.red.shade400,
+                tooltip: 'Delete expense',
+                onPressed: onDelete,
+              ),
+            ],
+          ],
         ),
         onTap: () {
           context.push('/expense/detail', extra: expense);
