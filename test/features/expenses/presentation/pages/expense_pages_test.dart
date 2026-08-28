@@ -1,7 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:travelexpense/app/locator.dart';
 import 'package:travelexpense/features/expenses/domain/entities/expense.dart';
 import 'package:travelexpense/features/expenses/presentation/pages/expense_detail_page.dart';
@@ -12,10 +13,20 @@ import 'package:travelexpense/features/expenses/presentation/pages/expense_form_
 /// Objective: Validate that ExpenseDetailPage displays complete expense details (title, amount, note)
 /// and ExpenseFormPage correctly renders input fields and save trigger.
 void main() {
-  setUp(() {
-    SharedPreferences.setMockInitialValues({});
+  late Directory tempDir;
+
+  setUp(() async {
+    tempDir = await Directory.systemTemp.createTemp('hive_pages_test_');
+    Hive.init(tempDir.path);
     locator.reset();
     setupLocator();
+  });
+
+  tearDown(() async {
+    await Hive.close();
+    if (await tempDir.exists()) {
+      await tempDir.delete(recursive: true);
+    }
   });
 
   final testExpense = Expense(
@@ -29,7 +40,6 @@ void main() {
   );
 
   group('Expenses Pages Widget Tests', () {
-    /// Objective: Verify ExpenseDetailPage renders all detailed field values correctly.
     testWidgets('ExpenseDetailPage displays title, amount and note', (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
@@ -44,7 +54,6 @@ void main() {
       expect(find.text('Business trip'), findsOneWidget);
     });
 
-    /// Objective: Verify ExpenseFormPage renders the form title and interactive Save button.
     testWidgets('ExpenseFormPage renders title field and save button', (WidgetTester tester) async {
       await tester.pumpWidget(
         const ProviderScope(
