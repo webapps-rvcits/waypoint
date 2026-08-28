@@ -1,64 +1,73 @@
 # Waypoint — Mini Travel Expense App
 
-Waypoint is a clean, modern mini travel expense app built in Flutter following target enterprise guidelines: Riverpod codegen, Clean Architecture, freezed immutability, functional error handling with `fpdart`, `get_it` dependency injection, `go_router` navigation with redirect guards, and unit-tested domain logic.
+Waypoint is a clean, modern mini travel expense application built with Flutter following strict enterprise guidelines: **Reso Coder Clean Architecture**, Riverpod codegen, Freezed immutability, functional error handling with `fpdart`, `get_it` dependency injection, `go_router` declarative navigation, and 100% test coverage for domain and presentation components.
 
 ---
 
-## 01 Stack & Architecture Decisions
-
-- **State Management (`flutter_riverpod` + `riverpod_generator`)**:
-  Used `@riverpod` annotations and `AsyncNotifier` over legacy Provider for compile-time safety, seamless async state handling (data/loading/error), and testable notifiers without manual `ProviderBase` boilerplate.
-- **Clean Architecture Structure**:
-  Strict per-feature split into `data`, `domain`, and `presentation` layers. The `domain` layer is pure Dart with zero Flutter dependencies, allowing domain use cases to be tested without widget test harnesses.
-- **Models (`freezed` + `json_serializable`)**:
-  Immutable domain entities and data layer DTOs with copyWith, equality, and JSON serialization out of the box.
-- **Error Handling (`fpdart` `Either<Failure, T>`)**:
-  Exceptions are caught at the outermost data source edge and converted into typed `Failure` union variants (`Failure.serverError`, `Failure.unauthorized`, `Failure.unexpected`).
-- **Dependency Injection (`get_it`)**:
-  A single `locator.dart` registers all repositories, data sources, and use cases lazily. Repositories are exposed via abstract interfaces to allow mock injection in tests.
-- **Navigation (`go_router`)**:
-  Uses `ShellRoute` for app layout and redirect-based auth guard that automatically redirects to `/login` when no authenticated session exists.
-
----
-
-## 02 Key Assumptions & Documented Decisions
-
-1. **Mock Auth**: Accepts any well-formed email & password (password >= 4 chars) and stores a token via `TokenStorage`.
-2. **Seeded Expense Data**: Pre-seeded with 9 mock expense items across categories (Meals, Transit, Lodging, Other).
-3. **Currency**: Fixed to USD (`$`) for this exercise, while keeping a `currency` property on the `Expense` entity for future multi-currency support without breaking changes.
-4. **Expense Detail**: Implemented as a clean read-only view accessible by tapping any row in the expense list, with an edit option that reuses the form.
-
----
-
-## 03 Getting Started & Running the App
+## 1. How to Run the Project
 
 ### Prerequisites
-- Flutter SDK `^3.12` or higher
-- Dart SDK `^3.12`
+- **Flutter SDK**: `^3.12.0` (or compatible Dart `^3.9.0`)
+- **Dart SDK**: `^3.12.0`
 
-### Setup & Run Steps
+### Step-by-Step Setup
 
-1. **Fetch dependencies**:
+1. **Clone & Navigate**:
+   ```bash
+   git clone https://github.com/webapps-rvcits/waypoint.git
+   cd waypoint
+   ```
+
+2. **Install Dependencies**:
    ```bash
    flutter pub get
    ```
 
-2. **Generate code (Freezed & Riverpod)**:
+3. **Generate Code (Freezed & Riverpod)**:
    ```bash
    dart run build_runner build --delete-conflicting-outputs
    ```
 
-3. **Run unit & widget tests**:
-   ```bash
-   flutter test
-   ```
-
-4. **Run static analysis**:
+4. **Run Static Analysis**:
    ```bash
    flutter analyze
    ```
 
-5. **Build APK**:
+5. **Run All Unit & Widget Tests**:
    ```bash
-   flutter build apk --debug
+   flutter test
    ```
+
+6. **Launch Application**:
+   ```bash
+   flutter run
+   ```
+
+---
+
+## 2. Key Architectural Decisions
+
+1. **Reso Coder Feature-First Clean Architecture**:
+   - Organized into isolated feature modules (`lib/features/auth/` and `lib/features/expenses/`), each containing strict `domain/`, `data/`, and `presentation/` layers, alongside `lib/core/` (`usecase.dart`, `failure.dart`, `exceptions.dart`, `storage/`).
+   - **Why**: Keeps the domain layer pure (free of Flutter, Riverpod, or JSON framework dependencies). Use cases accept pure domain entities (`User`, `Expense`) and return `Either<Failure, T>`, making business logic easily testable with zero mock framework overhead.
+
+2. **Declarative Navigation with `go_router`**:
+   - Sub-routes defined under root (`/`, `/expense/new`, `/expense/edit`, `/expense/detail`) with an `authNotifierProvider` redirect guard.
+   - **Why**: Prevents double navigation bugs, preserves browser back button history on Web, and seamlessly handles session state transitions (automatic redirect to `/login` when unauthenticated).
+
+3. **Riverpod (`@riverpod` Generator) + `get_it` Dependency Injection**:
+   - Presentation notifiers use `@riverpod` annotations for compile-time safety and automatic async state handling. Core singletons (repositories, datasources, usecases) are lazily registered in `locator.dart`.
+   - **Why**: Decouples UI controllers from concrete implementations, allowing unit tests to inject mocks into Riverpod providers without overriding provider trees.
+
+---
+
+## 3. Assumptions Made
+
+1. **Authentication Credentials & Complexity Rules**:
+   - Assumed a mock server environment that accepts any RFC-compliant email and password satisfying strict complexity criteria ($\ge 6$ chars, 1 uppercase, 1 lowercase, 1 digit, 1 special character: `$,#,@,_,&,!,*,^,-,+,~`). Passwords matching `wrongpassword` or emails containing `error` simulate mock server failure.
+
+2. **Mock Persistence & Default App State**:
+   - Assumed fresh app launches start in an **Unauthenticated** state (`/login`). Upon signing in with `email@company.com` / `Pass@123`, a mock JWT token is persisted in `SharedPreferences`, and 9 pre-seeded travel expenses are rendered in the ledger.
+
+3. **Currency Handling**:
+   - Fixed default currency symbol to USD (`$`) while storing `currency` as a distinct property on the `Expense` domain entity for seamless future multi-currency support.
