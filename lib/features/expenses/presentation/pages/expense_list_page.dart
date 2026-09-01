@@ -10,7 +10,7 @@ import '../notifiers/expense_list_notifier.dart';
 import '../widgets/expense_card.dart';
 
 /// Presentation Page: ExpenseListPage
-/// 
+///
 /// TEST SPECIFICATION & DOCUMENTATION:
 /// - Test Target: test/features/expenses/presentation/pages/expense_pages_test.dart
 /// - Purpose of Test: Validate full list rendering, total spent calculation header, category filtering, and pull-to-refresh.
@@ -32,10 +32,32 @@ class ExpenseListPage extends ConsumerWidget {
         ),
         actions: [
           IconButton(
+            key: const Key('logout_button'),
             icon: const Icon(Icons.logout_outlined),
             tooltip: 'Sign out',
-            onPressed: () {
-              ref.read(authNotifierProvider.notifier).logout();
+            onPressed: () async {
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Confirm Logout'),
+                  content: const Text('Are you sure you want to logout?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      style: TextButton.styleFrom(foregroundColor: Colors.red),
+                      child: const Text('Logout'),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirmed == true) {
+                ref.read(authNotifierProvider.notifier).logout();
+              }
             },
           ),
         ],
@@ -63,7 +85,11 @@ class ExpenseListPage extends ConsumerWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                    const Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: Colors.red,
+                    ),
                     const SizedBox(height: 12),
                     Text(
                       'Error loading expenses',
@@ -90,8 +116,8 @@ class ExpenseListPage extends ConsumerWidget {
               final filteredExpenses = selectedFilter == 'All'
                   ? expenses
                   : expenses
-                      .where((e) => e.category == selectedFilter)
-                      .toList();
+                        .where((e) => e.category == selectedFilter)
+                        .toList();
 
               final totalSpent = expenses.fold<double>(
                 0.0,
@@ -104,7 +130,9 @@ class ExpenseListPage extends ConsumerWidget {
                   // Total Spent Header Banner (Sample Design matching ledger strip)
                   Padding(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 16),
+                      horizontal: 24,
+                      vertical: 16,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -144,45 +172,43 @@ class ExpenseListPage extends ConsumerWidget {
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Row(
-                      children: [
-                        'All',
-                        'Meals',
-                        'Transit',
-                        'Lodging',
-                        'Other',
-                      ].map((category) {
-                        final isSelected = selectedFilter == category;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ChoiceChip(
-                            label: Text(category),
-                            selected: isSelected,
-                            onSelected: (_) {
-                              ref
-                                  .read(selectedCategoryFilterProvider.notifier)
-                                  .select(category);
-                            },
-                            selectedColor: AppTheme.accentMoney,
-                            backgroundColor: Colors.white,
-                            labelStyle: TextStyle(
-                              color: isSelected
-                                  ? Colors.white
-                                  : AppTheme.inkDark,
-                              fontWeight: isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                              side: BorderSide(
-                                color: isSelected
-                                    ? AppTheme.accentMoney
-                                    : Colors.grey.shade300,
+                      children: ['All', 'Meals', 'Transit', 'Lodging', 'Other']
+                          .map((category) {
+                            final isSelected = selectedFilter == category;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: ChoiceChip(
+                                label: Text(category),
+                                selected: isSelected,
+                                onSelected: (_) {
+                                  ref
+                                      .read(
+                                        selectedCategoryFilterProvider.notifier,
+                                      )
+                                      .select(category);
+                                },
+                                selectedColor: AppTheme.accentMoney,
+                                backgroundColor: Colors.white,
+                                labelStyle: TextStyle(
+                                  color: isSelected
+                                      ? Colors.white
+                                      : AppTheme.inkDark,
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                  side: BorderSide(
+                                    color: isSelected
+                                        ? AppTheme.accentMoney
+                                        : Colors.grey.shade300,
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
+                            );
+                          })
+                          .toList(),
                     ),
                   ),
 
@@ -203,12 +229,8 @@ class ExpenseListPage extends ConsumerWidget {
                                 const SizedBox(height: 16),
                                 Text(
                                   'No expenses found',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(
-                                        color: AppTheme.inkMuted,
-                                      ),
+                                  style: Theme.of(context).textTheme.titleMedium
+                                      ?.copyWith(color: AppTheme.inkMuted),
                                 ),
                               ],
                             ),
@@ -235,11 +257,13 @@ class ExpenseListPage extends ConsumerWidget {
                                       ),
                                       actions: [
                                         TextButton(
-                                          onPressed: () => Navigator.pop(ctx, false),
+                                          onPressed: () =>
+                                              Navigator.pop(ctx, false),
                                           child: const Text('Cancel'),
                                         ),
                                         TextButton(
-                                          onPressed: () => Navigator.pop(ctx, true),
+                                          onPressed: () =>
+                                              Navigator.pop(ctx, true),
                                           style: TextButton.styleFrom(
                                             foregroundColor: Colors.red,
                                           ),
@@ -251,7 +275,9 @@ class ExpenseListPage extends ConsumerWidget {
 
                                   if (confirmed == true) {
                                     await ref
-                                        .read(expenseListNotifierProvider.notifier)
+                                        .read(
+                                          expenseListNotifierProvider.notifier,
+                                        )
                                         .deleteExpense(expense.id);
                                   }
                                 },

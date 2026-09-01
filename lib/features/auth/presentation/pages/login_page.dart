@@ -36,8 +36,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           _passwordController.text.trim(),
         );
 
+    if (!mounted) return;
+
     ref.read(loginIsLoadingProvider.notifier).state = false;
-    if (!success && mounted) {
+    if (!success) {
       final authState = ref.read(authNotifierProvider);
       final errorMessage = authState.whenOrNull(
             error: (err, _) => err.toString(),
