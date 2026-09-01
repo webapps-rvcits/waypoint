@@ -7,12 +7,11 @@ import '../../../../app/theme.dart';
 import '../../domain/entities/expense.dart';
 import '../notifiers/expense_list_notifier.dart';
 
+final expenseFormCategoryProvider = StateProvider.autoDispose.family<String, String>((ref, initial) => initial);
+final expenseFormDateProvider = StateProvider.autoDispose.family<DateTime, DateTime>((ref, initial) => initial);
+final expenseFormSavingProvider = StateProvider.autoDispose<bool>((ref) => false);
+
 /// Presentation Page: ExpenseFormPage
-/// 
-/// TEST SPECIFICATION & DOCUMENTATION:
-/// - Test Target: test/features/expenses/presentation/pages/expense_pages_test.dart
-/// - Purpose of Test: Validate expense creation/editing form validation and submission behavior.
-/// - Objective of Test: Ensure title field is non-empty, amount input strictly enforces > 0 values, category selector chip sets valid value, date picker defaults to selected date, and Save action calls notifier correctly.
 class ExpenseFormPage extends ConsumerStatefulWidget {
   final Expense? expenseToEdit;
 
@@ -31,10 +30,6 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
   late TextEditingController _amountController;
   late TextEditingController _noteController;
 
-  late String _selectedCategory;
-  late DateTime _selectedDate;
-  bool _isSaving = false;
-
   final List<String> _categories = ['Meals', 'Transit', 'Lodging', 'Other'];
 
   @override
@@ -46,8 +41,6 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
       text: edit != null ? edit.amount.toStringAsFixed(2) : '',
     );
     _noteController = TextEditingController(text: edit?.note ?? '');
-    _selectedCategory = edit?.category ?? 'Meals';
-    _selectedDate = edit?.date ?? DateTime.now();
   }
 
   @override
@@ -58,19 +51,19 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
     super.dispose();
   }
 
-  Future<void> _selectDate() async {
+  Future<void> _selectDate(DateTime currentDate) async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate,
+      initialDate: currentDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
     );
     if (picked != null) {
-      setState(() => _selectedDate = picked);
+      ref.read(expenseFormDateProvider(widget.expenseToEdit?.date ?? DateTime.now()).notifier).state = picked;
     }
   }
 
-  Future<void> _saveExpense() async {
+  Future<void> _saveExpense(String selectedCategory, DateTime selectedDate) async {
     if (!_formKey.currentState!.validate()) return;
 
     final parsedAmount = double.tryParse(_amountController.text.trim());
@@ -81,7 +74,7 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
       return;
     }
 
-    setState(() => _isSaving = true);
+    ref.read(expenseFormSavingProvider.notifier).state = true;
 
     final isEdit = widget.expenseToEdit != null;
     final expense = Expense(
@@ -89,8 +82,8 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
       amount: parsedAmount,
       currency: widget.expenseToEdit?.currency ?? 'USD',
       title: _titleController.text.trim(),
-      category: _selectedCategory,
-      date: _selectedDate,
+      category: selectedCategory,
+      date: selectedDate,
       note: _noteController.text.trim().isEmpty
           ? null
           : _noteController.text.trim(),
@@ -101,8 +94,8 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
         ? await notifier.updateExpense(expense)
         : await notifier.addExpense(expense);
 
+    ref.read(expenseFormSavingProvider.notifier).state = false;
     if (mounted) {
-      setState(() => _isSaving = false);
       if (success) {
         Navigator.of(context).pop();
       } else {
@@ -118,6 +111,13 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
     final isEdit = widget.expenseToEdit != null;
     final dateFormat = DateFormat('MMM dd, yyyy');
 
+    final initialCategory = widget.expenseToEdit?.category ?? 'Meals';
+    final initialDate = widget.expenseToEdit?.date ?? DateTime.now();
+
+    final selectedCategory = ref.watch(expenseFormCategoryProvider(initialCategory));
+    final selectedDate = ref.watch(expenseFormDateProvider(initialDate));
+    final isSaving = ref.watch(expenseFormSavingProvider);
+
     return Scaffold(
       backgroundColor: AppTheme.inkSurface,
       appBar: AppBar(
@@ -130,7 +130,7 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
             padding: const EdgeInsets.only(right: 12),
             child: TextButton(
               key: const Key('expense_save_button'),
-              onPressed: _isSaving ? null : _saveExpense,
+              onPressed: isSaving ? null : () => _saveExpense(selectedCategory, selectedDate),
               child: Text(
                 'Save',
                 style: GoogleFonts.inter(
@@ -238,13 +238,13 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
                 spacing: 8,
                 runSpacing: 8,
                 children: _categories.map((cat) {
-                  final isSelected = _selectedCategory == cat;
+                  final isSelected = selectedCategory == cat;
                   return ChoiceChip(
                     label: Text(cat),
                     selected: isSelected,
                     onSelected: (selected) {
                       if (selected) {
-                        setState(() => _selectedCategory = cat);
+                        ref.read(expenseFormCategoryProvider(initialCategory).notifier).state = cat;
                       }
                     },
                     selectedColor: AppTheme.accentMoneyBg,
@@ -281,7 +281,7 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
               ),
               const SizedBox(height: 8),
               InkWell(
-                onTap: _selectDate,
+                onTap: () => _selectDate(selectedDate),
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
                   padding:
@@ -294,7 +294,7 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        dateFormat.format(_selectedDate),
+                        dateFormat.format(selectedDate),
                         style: GoogleFonts.inter(
                           fontSize: 15,
                           color: AppTheme.inkDark,
