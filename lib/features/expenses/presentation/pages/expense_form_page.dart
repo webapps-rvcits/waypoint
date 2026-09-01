@@ -94,15 +94,14 @@ class _ExpenseFormPageState extends ConsumerState<ExpenseFormPage> {
         ? await notifier.updateExpense(expense)
         : await notifier.addExpense(expense);
 
+    if (!mounted) return;
     ref.read(expenseFormSavingProvider.notifier).state = false;
-    if (mounted) {
-      if (success) {
-        Navigator.of(context).pop();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error saving expense')),
-        );
-      }
+    if (success) {
+      Navigator.of(context).pop();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error saving expense')),
+      );
     }
   }
 

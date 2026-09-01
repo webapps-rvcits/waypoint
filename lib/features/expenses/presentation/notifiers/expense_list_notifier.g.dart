@@ -35,7 +35,7 @@ final selectedCategoryFilterProvider =
 
 typedef _$SelectedCategoryFilter = AutoDisposeNotifier<String>;
 String _$expenseListNotifierHash() =>
-    r'6ae496ba3ff4e49f82a605b499bd9d1c11f1608a';
+    r'79e90834c1681817c4a654cc497a22a715a430f1';
 
 /// See also [ExpenseListNotifier].
 @ProviderFor(ExpenseListNotifier)
